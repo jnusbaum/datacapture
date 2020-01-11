@@ -24,11 +24,6 @@ def on_connect(client, userdata, flags, rc):
                 'type': 'TEMP',
                 'timestamp': ts,
                 'value': 135.7
-            },
-            'PUMP': {
-                 'type': 'ONOFF',
-                 'timestamp': ts,
-                 'value': 1
             }
     }
 
@@ -49,11 +44,6 @@ def on_publish(client, userdata, mid):
                 'type': 'TEMP',
                 'timestamp': ts,
                 'value': 135.7
-            },
-            'PUMP': {
-                 'type': 'ONOFF',
-                 'timestamp': ts,
-                 'value': 1
             }
     }
 
