@@ -1,46 +1,64 @@
-import os
-import logging
+import json
 from datetime import datetime
 import paho.mqtt.client as mqtt
 import time
-from config import Config
 
-# set up logger
-# make file unique
-# we will be running multiple processes behind gunicorn
-# we do not want all the processes writing to the same log file as this can result in garbled data in the file
-# so we need a unique file name each time we run
-# we will add date and time down to seconds (which will probably be the same for all processes)
-# and add process id to get uniqueness
-fparts = Config.LOGFILE.split('.')
-bname = fparts[0]
-ename = fparts[1]
-nname = "%s.%s.%d.%s" % (bname, datetime.today().strftime("%Y-%m-%d-%H-%M-%S"), os.getpid(), ename)
-logfile = Config.LOGDIR + nname
-# create log directory if it does not exist
-os.makedirs(Config.LOGDIR, 0o777, True)
-# set up basic logging
-logging.basicConfig(filename=logfile, level=Config.LOGLEVEL,
-                    format='%(asctime)s - %(levelname)s - %(message)s')
-
-
-def str_to_datetime(ans):
-    if ans:
-        d = datetime.strptime(ans, "%Y-%m-%d-%H-%M-%S")
-        # no tz info, assumed to be in UTC
-        return d
-    return None
+def handler(obj):
+    if hasattr(obj, 'isoformat'):
+        return obj.isoformat()
+    else:
+        raise TypeError('Object of type %s with value of %s is not JSON serializable' % (type(obj), repr(obj)))
 
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
-    client.publish("sorrelhills/temperature/zone/BOILER", "test payload")
+    ts = datetime.today()
+    payload = {
+            'IN': {
+                'type': 'TEMP',
+                'timestamp': ts,
+                'value': 142.3
+            },
+            'OUT': {
+                'type': 'TEMP',
+                'timestamp': ts,
+                'value': 135.7
+            },
+            'PUMP': {
+                 'type': 'ONOFF',
+                 'timestamp': ts,
+                 'value': 1
+            }
+    }
+
+    jload = json.dumps(payload, default=handler)
+    client.publish("sorrelhills/temperature/zone/BOILER", jload)
 
 
 def on_publish(client, userdata, mid):
     time.sleep(5)
-    client.publish("sorrelhills/temperature/zone/BOILER", "test payload")
+    ts = datetime.today()
+    payload = {
+            'IN': {
+                'type': 'TEMP',
+                'timestamp': ts,
+                'value': 142.3
+            },
+            'OUT': {
+                'type': 'TEMP',
+                'timestamp': ts,
+                'value': 135.7
+            },
+            'PUMP': {
+                 'type': 'ONOFF',
+                 'timestamp': ts,
+                 'value': 1
+            }
+    }
+
+    jload = json.dumps(payload, default=handler)
+    client.publish("sorrelhills/temperature/zone/BOILER", jload)
 
 
 client = mqtt.Client()
