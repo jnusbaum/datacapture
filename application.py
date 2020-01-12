@@ -13,46 +13,27 @@ def on_connect(client, userdata, flags, rc):
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("sorrelhills/temperature/zone/+")
+    client.subscribe("sorrelhills/temperature/+")
 
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
-    con = userdata
-    # pick zone name out of topic
-    tlevels = msg.topic.split('/')
-    zname = tlevels[-1]
-    print(zname+" "+str(msg.payload))
     # save data to db
-    # zone payload is JSON object containing sensor value for each sensor in zone
-    # {
-    #         'IN': {
-    #             'type': 'TEMP'',
+    # zone payload is JSON object containing sensor value
+    #         {
+    #             'sensor': 'BOILER-IN',
     #             'timestamp': '2020-01-11T14:33:10.772357',
     #             'value': 142.3
-    #         },
-    #         'OUT': {
-    #             'type': 'TEMP',
-    #             'timestamp': '2020-01-11T14:33:25.773748',
-    #             'value': 135.7
-    #         },
-    #         'PUMP': {
-    #              'type': 'ONOFF',
-    #              'timestamp': '2020-01-11T14:33:35.774187',
-    #              'value': 1
-    #         },
-    #         ...
-    # }
+    #         }
+    con = userdata
+    print(str(msg.payload))
     payload = json.loads(msg.payload)
-    try:
-        with con:
-            for sname, sdata in payload.items():
-                fsname = zname + '-' + sname
-                timestamp = datetime.fromisoformat(sdata['timestamp'])
-                value = sdata['value']
-                con.execute("insert into SensorData(sensor, timestamp, value) values (?, ?, ?)", (fsname, timestamp, value))
-    except sqlite3.IntegrityError:
-        print("couldn't add Joe twice")
+    with con:
+            fsname = payload['sensor']
+            timestamp = datetime.fromisoformat(payload['timestamp'])
+            value = payload['value']
+            con.execute("insert into heating_sensordata(sensor_id, timestamp, value, original_value) values (?, ?, ?, ?)", (fsname, timestamp, value, value))
+
 
 
 # set up logger

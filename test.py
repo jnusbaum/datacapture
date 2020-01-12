@@ -15,40 +15,26 @@ def on_connect(client, userdata, flags, rc):
     print("Connected with result code "+str(rc))
     ts = datetime.today()
     payload = {
-            'IN': {
-                'type': 'TEMP',
-                'timestamp': ts,
+                'sensor': 'BOILER-IN',
+                'timestamp': ts.isoformat(),
                 'value': 142.3
-            },
-            'OUT': {
-                'type': 'TEMP',
-                'timestamp': ts,
-                'value': 135.7
             }
-    }
 
     jload = json.dumps(payload, default=handler)
-    client.publish("sorrelhills/temperature/zone/BOILER", jload)
+    client.publish("sorrelhills/temperature/BOILER-IN", jload)
 
 
 def on_publish(client, userdata, mid):
     time.sleep(5)
     ts = datetime.today()
     payload = {
-            'IN': {
-                'type': 'TEMP',
-                'timestamp': ts,
-                'value': 142.3
-            },
-            'OUT': {
-                'type': 'TEMP',
-                'timestamp': ts,
-                'value': 135.7
-            }
-    }
+        'sensor': 'BOILER-IN',
+        'timestamp': ts.isoformat(),
+        'value': 141.3
+        }
 
-    jload = json.dumps(payload, default=handler)
-    client.publish("sorrelhills/temperature/zone/BOILER", jload)
+    jload = json.dumps(payload)
+    client.publish("sorrelhills/temperature/BOILER-IN", jload)
 
 
 client = mqtt.Client()
