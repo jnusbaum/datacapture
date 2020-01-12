@@ -1,9 +1,10 @@
 import os
 import logging
+from datetime import datetime
 import json
 import paho.mqtt.client as mqtt
 from config import Config
-from models import *
+import sqlite3
 
 
 # The callback for when the client receives a CONNACK response from the server.
@@ -17,6 +18,7 @@ def on_connect(client, userdata, flags, rc):
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
+    con = userdata
     # pick zone name out of topic
     tlevels = msg.topic.split('/')
     zname = tlevels[-1]
@@ -42,13 +44,15 @@ def on_message(client, userdata, msg):
     #         ...
     # }
     payload = json.loads(msg.payload)
-    with db_session:
-        for sname, sdata in payload.items():
-            fsname = zname + '-' + sname
-            timestamp = datetime.fromisoformat(sdata['timestamp'])
-            value = sdata['value']
-            sensor = Sensor[fsname]
-            SensorData(sensor=sensor, timestamp=timestamp, value=value)
+    try:
+        with con:
+            for sname, sdata in payload.items():
+                fsname = zname + '-' + sname
+                timestamp = datetime.fromisoformat(sdata['timestamp'])
+                value = sdata['value']
+                con.execute("insert into SensorData(sensor, timestamp, value) values (?, ?, ?)", (fsname, timestamp, value))
+    except sqlite3.IntegrityError:
+        print("couldn't add Joe twice")
 
 
 # set up logger
@@ -60,11 +64,8 @@ logging.basicConfig(filename=logfile, level=Config.LOGLEVEL, format='%(asctime)s
 # create db directory if it does not exist
 os.makedirs(os.path.dirname(Config.DATABASE), 0o777, True)
 
-db.bind(provider='sqlite', filename=Config.DATABASE, create_db=True)
-
-db.generate_mapping(create_tables=True)
-
-client = mqtt.Client()
+con = sqlite3.connect(Config.DATABASE)
+client = mqtt.Client(userdata=con)
 client.on_connect = on_connect
 client.on_message = on_message
 
