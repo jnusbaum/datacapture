@@ -9,7 +9,7 @@ import sqlite3
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
-    print("Connected with result code "+str(rc))
+    logging.info(f"Connected with result code {rc}")
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
@@ -29,10 +29,11 @@ def on_message(client, userdata, msg):
     print(str(msg.payload))
     payload = json.loads(msg.payload)
     with con:
-            fsname = payload['sensor']
-            timestamp = datetime.fromisoformat(payload['timestamp'])
-            value = payload['value']
-            con.execute("insert into heating_sensordata(sensor_id, timestamp, value, original_value) values (?, ?, ?, ?)", (fsname, timestamp, value, value))
+        fsname = payload['sensor']
+        timestamp = datetime.fromisoformat(payload['timestamp'])
+        value = payload['value']
+        logging.debug(f"inserting {fsname}, {timestamp}, {value}")
+        con.execute("insert into heating_sensordata(sensor_id, timestamp, value, original_value) values (?, ?, ?, ?)", (fsname, timestamp, value, value))
 
 
 # set up logger
