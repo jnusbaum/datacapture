@@ -13,7 +13,7 @@ def on_connect(client, userdata, flags, rc):
 
     # Subscribing in on_connect() means that if we lose the connection and
     # reconnect then subscriptions will be renewed.
-    client.subscribe("sorrelhills/temperature/+")
+    client.subscribe(Config.TOPIC)
 
 
 # The callback for when a PUBLISH message is received from the server.
@@ -35,7 +35,6 @@ def on_message(client, userdata, msg):
             con.execute("insert into heating_sensordata(sensor_id, timestamp, value, original_value) values (?, ?, ?, ?)", (fsname, timestamp, value, value))
 
 
-
 # set up logger
 logfile = f"{Config.LOGFILE}.{datetime.today().strftime('%Y-%m-%d-%H-%M-%S')}.log"
 # create log directory if it does not exist
@@ -49,7 +48,6 @@ con = sqlite3.connect(Config.DATABASE)
 client = mqtt.Client(userdata=con)
 client.on_connect = on_connect
 client.on_message = on_message
-
 client.connect(Config.MQTTHOST)
 
 # Blocking call that processes network traffic, dispatches callbacks and
