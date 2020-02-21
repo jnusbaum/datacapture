@@ -6,6 +6,7 @@ import paho.mqtt.client as mqtt
 from config import Config
 import sqlite3
 
+MIN_TEMP = 25
 
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
@@ -32,8 +33,12 @@ def on_message(client, userdata, msg):
         fsname = payload['sensor']
         timestamp = datetime.fromisoformat(payload['timestamp'])
         value = payload['value']
+        ovalue = value
+        if value < MIN_TEMP:
+            logging.warning(f"replacing {value} with {MIN_TEMP} for {fsname}, {timestamp}")
+            value = MIN_TEMP
         logging.debug(f"inserting {fsname}, {timestamp}, {value}")
-        con.execute("insert into heating_sensordata(sensor_id, timestamp, value, original_value) values (?, ?, ?, ?)", (fsname, timestamp, value, value))
+        con.execute("insert into heating_sensordata(sensor_id, timestamp, value, original_value) values (?, ?, ?, ?)", (fsname, timestamp, value, ovalue))
 
 
 # set up logger
